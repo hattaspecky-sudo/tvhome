@@ -1,0 +1,32 @@
+name: Build APK
+on:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack project
+        run: |
+          if [ -f tvhome.zip ]; then unzip -oq tvhome.zip && cp -r tvhome/. . && rm -rf tvhome; fi
+          chmod +x gradlew
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build
+        run: ./gradlew --no-daemon assembleTvDebug assemblePhoneDebug
+      - name: Rename
+        run: |
+          cp app/build/outputs/apk/tv/debug/app-tv-debug.apk tv.apk
+          cp app/build/outputs/apk/phone/debug/app-phone-debug.apk phone.apk
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest -y --cleanup-tag || true
+          gh release create latest tv.apk phone.apk --title "Latest build" --notes "Built from ${GITHUB_SHA::7}"
