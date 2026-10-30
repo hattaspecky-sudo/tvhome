@@ -1,0 +1,26 @@
+{
+  "name": "Hatta",
+
+  "tmdbApiKey": "",
+
+  "favoriteApps": [
+    "com.netflix.ninja",
+    "com.google.android.youtube.tv",
+    "org.xbmc.kodi",
+    "com.stremio.one",
+    "com.spotify.tv.android"
+  ],
+
+  "youtubeRows": [
+    { "title": "NBA highlights", "channelId": "UCWJ2lWNubArHWmf3FIHbfcQ" }
+  ],
+
+  "latitude": 3.139,
+  "longitude": 101.687,
+  "prayerZone": "WLY01",
+  "nbaTeam": "por",
+
+  "calendarIcsUrls": [],
+  "holidayIcsUrl": "https://calendar.google.com/calendar/ical/en.malaysia%23holiday%40group.v.calendar.google.com/public/basic.ics",
+  "birthdays": []
+}
