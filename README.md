@@ -12,7 +12,7 @@ Google TV-style launcher for Android TV 9+. Round 1 has the base:
 Round 2 adds:
 
 - Wallpaper home (default): changes with time of day (morning / day / evening / night) and weather, a new picture each day, 1.5s crossfades, fades to black behind the rows, slightly dimmer at night
-- Focusing a show or video swaps the wallpaper for its artwork after 1 second (slow zoom). Settings > Hero switches back to the round 1 rotating banner
+- Focusing a show or video swaps the wallpaper for its artwork after 1 second. Settings > Hero switches back to the round 1 rotating banner
 - Weather + next prayer pill next to the clock. Click it for the full day's schedule (JAKIM e-Solat). It turns orange 15 minutes before, and a banner shows at prayer time
 - Widgets on the right: next calendar event, Trail Blazers next game or live score, now playing with album art (only while music plays)
 - Birthday and holiday greeting, full screen, once a day

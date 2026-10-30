@@ -72,8 +72,19 @@ fun greetingFor(hour: Int, name: String?): String {
 
 // ---------- Hero text over the wallpaper ----------
 
+/** What the remote is on. Read only by the hero title and backdrop, so other parts don't redraw on every move. */
+class FocusState {
+    var item by mutableStateOf<MediaItem?>(null)
+    var app by mutableStateOf<AppItem?>(null)
+}
+
 @Composable
-fun WallpaperInfo(height: Dp, sideGutter: Dp, greeting: String, title: String?, meta: String?) {
+fun WallpaperInfo(height: Dp, sideGutter: Dp, greeting: String, focus: FocusState) {
+    val item = focus.item
+    val app = focus.app
+    val title = item?.title ?: app?.label
+    val meta = item?.let { listOfNotNull(it.source, it.subtitle).distinct().joinToString("  ·  ") }
+        ?: app?.let { "Press OK to open" }
     Column(
         Modifier.fillMaxWidth().height(height).padding(horizontal = sideGutter),
         verticalArrangement = Arrangement.Bottom,

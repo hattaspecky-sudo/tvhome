@@ -16,7 +16,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
@@ -82,11 +85,19 @@ fun AmbientBackdrop(
     scene: Scene,
     sky: Sky,
     file: File?,
-    focusItem: MediaItem?,
+    focus: FocusState,
+    showFocus: Boolean,
     faded: Boolean,
     animate: Boolean,
 ) {
     val alpha by animateFloatAsState(if (faded) 0.3f else 1f, tween(600), label = "wallAlpha")
+    // Artwork appears only after the remote rests on a show for 1 second
+    val target = if (showFocus) focus.item else null
+    var focusItem by remember { mutableStateOf<MediaItem?>(null) }
+    LaunchedEffect(target) {
+        focusItem = null
+        if (target != null && (target.backdrop ?: target.image) != null) { delay(1000); focusItem = target }
+    }
     Box(Modifier.fillMaxSize().alpha(alpha)) {
         Crossfade(targetState = Triple(scene, sky, file), animationSpec = tween(1500), label = "wall") { (sc, sk, f) ->
             if (f != null) {
@@ -95,18 +106,15 @@ fun AmbientBackdrop(
                 DrawnWallpaper(sc, sk, animate)
             }
         }
-        // Focused show artwork, slow zoom. null = wallpaper shows through.
-        Crossfade(targetState = focusItem, animationSpec = tween(900), label = "focusArt") { item ->
+        // Focused show artwork. null = wallpaper shows through.
+        // (No continuous zoom: animating a full-screen image every frame is too heavy for TV chips.)
+        Crossfade(targetState = focusItem, animationSpec = tween(700), label = "focusArt") { item ->
             if (item != null) {
-                val zoom = remember(item) { Animatable(1f) }
-                LaunchedEffect(item, animate) {
-                    if (animate) zoom.animateTo(1.08f, tween(20_000, easing = LinearEasing))
-                }
                 AsyncImage(
                     model = item.backdrop ?: item.image,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize().graphicsLayer { scaleX = zoom.value; scaleY = zoom.value },
+                    modifier = Modifier.fillMaxSize(),
                 )
             }
         }
@@ -186,12 +194,8 @@ private val Ridge3 = floatArrayOf(0f, 740f, 240f, 690f, 460f, 730f, 720f, 680f, 
 private fun DrawnWallpaper(scene: Scene, sky: Sky, animate: Boolean) {
     val p = remember(scene, sky) { paletteFor(scene, sky) }
     val wet = sky == Sky.RAIN || sky == Sky.STORM
-    val rainShift = if (wet && animate) {
-        val t = rememberInfiniteTransition(label = "rain")
-        val v by t.animateFloat(0f, 1f, infiniteRepeatable(tween(700, easing = LinearEasing)), label = "rainT")
-        v
-    } else 0f
 
+    // Static picture: drawn once, never repainted by the rain animation
     Canvas(Modifier.fillMaxSize()) {
         val sx = size.width / 1920f
         val sy = size.height / 1080f
@@ -206,14 +210,27 @@ private fun DrawnWallpaper(scene: Scene, sky: Sky, animate: Boolean) {
         drawRidge(Ridge1, p.m1, sx, sy)
         drawRidge(Ridge2, p.m2, sx, sy)
         drawRidge(Ridge3, p.m3, sx, sy)
-        if (wet) {
-            val dy = rainShift * 60f * sy
-            val dx = -rainShift * 20f * sx
-            for (i in 0 until 90) {
-                val x = ((i * 97) % 1980) * sx + dx
-                val y = (((i * 53) % 820) - 60) * sy + dy
-                drawLine(Color(0x8CCFD8E6), Offset(x, y), Offset(x - 10f * sx, y + 34f * sy), strokeWidth = 2f * sx, cap = StrokeCap.Round)
-            }
+    }
+    if (wet) RainLayer(animate)
+}
+
+/** Rain on its own layer; the animation is read only while drawing, so nothing recomposes per frame. */
+@Composable
+private fun RainLayer(animate: Boolean) {
+    val shift = if (animate) {
+        rememberInfiniteTransition(label = "rain")
+            .animateFloat(0f, 1f, infiniteRepeatable(tween(700, easing = LinearEasing)), label = "rainT")
+    } else null
+    Canvas(Modifier.fillMaxSize().graphicsLayer()) {
+        val sx = size.width / 1920f
+        val sy = size.height / 1080f
+        val s = shift?.value ?: 0f
+        val dy = s * 60f * sy
+        val dx = -s * 20f * sx
+        for (i in 0 until 60) {
+            val x = ((i * 97) % 1980) * sx + dx
+            val y = (((i * 53) % 820) - 60) * sy + dy
+            drawLine(Color(0x8CCFD8E6), Offset(x, y), Offset(x - 10f * sx, y + 34f * sy), strokeWidth = 2f * sx, cap = StrokeCap.Round)
         }
     }
 }

@@ -105,7 +105,7 @@ fun HomeScreen(repo: Repository, store: Prefs) {
     val live = rememberLive(data.cfg)
     val music = rememberNowPlaying()
     val now by produceState(LocalDateTime.now()) {
-        while (true) { value = LocalDateTime.now(); delay(20_000) }
+        while (true) { value = LocalDateTime.now(); delay(60_000) }
     }
     val today = now.toLocalDate()
     val scene = sceneFor(now.hour)
@@ -118,14 +118,8 @@ fun HomeScreen(repo: Repository, store: Prefs) {
     var prayerOpen by remember { mutableStateOf(false) }
 
     // What's focused drives the big title; shows/videos also swap the wallpaper for their artwork after 1s
-    var focusedItem by remember { mutableStateOf<MediaItem?>(null) }
-    var focusedApp by remember { mutableStateOf<AppItem?>(null) }
-    var backdropItem by remember { mutableStateOf<MediaItem?>(null) }
-    LaunchedEffect(focusedItem) {
-        backdropItem = null
-        val f = focusedItem
-        if (f != null && (f.backdrop ?: f.image) != null) { delay(1000); backdropItem = f }
-    }
+    // Only the title and backdrop read this, so moving with the remote doesn't redraw the whole screen
+    val focus = remember { FocusState() }
 
     // Music widget: shows while playing, hides a minute after pause/stop
     val np = music.state
@@ -235,7 +229,8 @@ fun HomeScreen(repo: Repository, store: Prefs) {
                 scene = scene,
                 sky = sky,
                 file = wallFile,
-                focusItem = if (tab == Tab.HOME && !prefs.lite) backdropItem else null,
+                focus = focus,
+                showFocus = tab == Tab.HOME && !prefs.lite,
                 faded = scrolled || tab == Tab.APPS,
                 animate = !prefs.lite,
             )
@@ -268,9 +263,7 @@ fun HomeScreen(repo: Repository, store: Prefs) {
                             height = heroHeight - 70.dp,
                             sideGutter = SideGutter,
                             greeting = greetingFor(now.hour, data.cfg?.name),
-                            title = focusedItem?.title ?: focusedApp?.label,
-                            meta = focusedItem?.let { listOfNotNull(it.source, it.subtitle).distinct().joinToString("  ·  ") }
-                                ?: focusedApp?.let { "Press OK to open" },
+                            focus = focus,
                         )
                     }
                     itemsIndexed(visibleRows, key = { _, id -> id }) { index, id ->
@@ -282,7 +275,7 @@ fun HomeScreen(repo: Repository, store: Prefs) {
                                 firstReq = req,
                                 onOpen = { open(context, it.intent) },
                                 onLong = { menu = MenuFor.App(it) },
-                                onFocus = { focusedApp = it; focusedItem = null },
+                                onFocus = { focus.app = it; focus.item = null },
                             )
                         } else rowsById[id]?.let { row ->
                             MediaRowView(
@@ -290,7 +283,7 @@ fun HomeScreen(repo: Repository, store: Prefs) {
                                 firstReq = req,
                                 onOpen = { open(context, it.intent) },
                                 onLong = { menu = MenuFor.Row(row.id, row.title) },
-                                onFocus = { focusedItem = it; focusedApp = null },
+                                onFocus = { focus.item = it; focus.app = null },
                             )
                         }
                     }
