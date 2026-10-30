@@ -19,7 +19,13 @@ jobs:
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
       - name: Build
-        run: ./gradlew --no-daemon assembleTvDebug assemblePhoneDebug
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon assembleTvDebug assemblePhoneDebug 2>&1 | tee build.log
+      - name: Show build errors
+        if: failure()
+        run: |
+          grep -E "^e: |error:|What went wrong" -A2 build.log | head -60 | while IFS= read -r l; do echo "::error::$l"; done
       - name: Rename
         run: |
           cp app/build/outputs/apk/tv/debug/app-tv-debug.apk tv.apk
