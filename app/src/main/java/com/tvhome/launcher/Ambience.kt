@@ -56,8 +56,9 @@ private val BlackBg = Color(0xFF08090B)
 
 /**
  * Your own wallpapers, pushed to the TV:
- *   /sdcard/Android/data/com.tvhome.launcher/files/wallpapers/<scene>/<sky>/*.jpg   (e.g. night/rain/)
- *   /sdcard/Android/data/com.tvhome.launcher/files/wallpapers/<scene>/*.jpg         (any weather)
+ *   /sdcard/Android/data/com.tvhome.launcher/files/wallpapers/<scene>/<sky>/ (e.g. night/rain/)
+ *   /sdcard/Android/data/com.tvhome.launcher/files/wallpapers/<scene>/       (any weather)
+ * JPG, PNG or WebP files.
  * A different picture is picked each day. Nothing found = built-in drawn wallpaper.
  */
 fun pickWallpaper(context: Context, scene: Scene, sky: Sky, day: LocalDate): File? {
